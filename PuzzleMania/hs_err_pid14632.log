@@ -1,0 +1,23 @@
+#
+# A fatal error has been detected by the Java Runtime Environment:
+#
+#  SIGSEGV (0xb) at pc=0x00007f57a1fd2749, pid=14632, tid=14664
+#
+# JRE version: OpenJDK Runtime Environment (11.0.9.1+1) (build 11.0.9.1+1-Ubuntu-0ubuntu1.18.04)
+# Java VM: OpenJDK 64-Bit Server VM (11.0.9.1+1-Ubuntu-0ubuntu1.18.04, mixed mode, sharing, tiered, compressed oops, g1 gc, linux-amd64)
+# Problematic frame:
+# C  [amdgpu_dri.so+0x159b749]
+#
+# Core dump will be written. Default location: Core dumps may be processed with "/usr/share/apport/apport %p %s %c %d %P %E" (or dumping to /media/niko/D1/JavaGames/PuzzleMania/core.14632)
+#
+# If you would like to submit a bug report, please visit:
+#   https://bugs.launchpad.net/ubuntu/+source/openjdk-lts
+# The crash happened outside the Java Virtual Machine in native code.
+# See problematic frame for where to report the bug.
+#
+
+---------------  S U M M A R Y ------------
+
+Command Line: -agentlib:jdwp=transport=dt_socket,suspend=y,address=localhost:46431 --module-path=/media/niko/D1/Downloads/javafx-sdk-11.0.2_V13/lib --add-modules=javafx.controls,javafx.fxml,javafx.media -javaagent:/home/niko/eclipse/java-2019-09/eclipse/configuration/org.eclipse.osgi/1804/0/.cp/lib/javaagent-shaded.jar -Dfile.encoding=UTF-8 com.goregoblin.subTest.PQSubTests1
+
+Host: 

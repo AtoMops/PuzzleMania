@@ -1,0 +1,1523 @@
+package grabMTGLIb;
+
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.ObjectInputStream;
+import java.nio.file.FileSystems;
+import java.nio.file.Files;
+import java.nio.file.PathMatcher;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Predicate;
+import java.util.function.Supplier;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import javafx.animation.Interpolator;
+import javafx.animation.KeyFrame;
+import javafx.animation.KeyValue;
+import javafx.animation.Timeline;
+import javafx.animation.TranslateTransition;
+import javafx.application.Application;
+import javafx.beans.property.DoubleProperty;
+import javafx.collections.FXCollections;
+import javafx.collections.ListChangeListener;
+import javafx.collections.ObservableList;
+import javafx.event.Event;
+import javafx.event.EventHandler;
+import javafx.event.EventType;
+import javafx.geometry.Rectangle2D;
+import javafx.scene.Group;
+import javafx.scene.Node;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
+import javafx.scene.effect.Effect;
+import javafx.scene.effect.PerspectiveTransform;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
+import javafx.scene.input.MouseEvent;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Pane;
+import javafx.scene.paint.Color;
+import javafx.scene.shape.Circle;
+import javafx.scene.shape.MoveTo;
+import javafx.scene.shape.Path;
+import javafx.scene.shape.QuadCurveTo;
+import javafx.scene.shape.Rectangle;
+import javafx.stage.Screen;
+import javafx.stage.Stage;
+import javafx.stage.StageStyle;
+import javafx.util.Duration;
+
+public class MTGShellSubMenu14 extends Application {
+	/*
+	 * this is the prototype of the MTGShellSubMenu (where the user can choose
+	 * MTGCards based on filters)
+	 * 
+	 */
+
+	private double screenFac = 1.5;
+	private Rectangle2D screenSize;
+	private double width;
+	private double height;
+
+	private Pane root; // we need some basic structure
+
+	private AtomicBoolean isZoomed = new AtomicBoolean(false); // for card Zoom
+//	private AtomicBoolean klickedImgGroupFirstTime = new AtomicBoolean(false); 
+	
+	private AtomicBoolean isClkLeftAllowed = new AtomicBoolean(true);
+	private AtomicBoolean isClkRightAllowed = new AtomicBoolean(true);
+	
+	private double durationMilliRotSpeed;
+	private double zoomSpeed;
+	
+	List<ImageView> currPosCards;
+	List<ImageView> imageListIn;
+	Group imgViewGroup; // the group of ImageViews shown on screeen
+	
+	private AtomicInteger listCounter = new AtomicInteger();
+	private boolean moreThanThreeCards;
+	private AtomicBoolean directionClick = new AtomicBoolean(true); // false: left; true: right
+	
+	private Parent launchMTGPerc() {
+
+		screenSize = Screen.getPrimary().getBounds();
+		width = screenSize.getWidth();
+		height = screenSize.getHeight();
+		// later add screenFac to button/controller to enable custom resize during
+		// run-time
+		width /= screenFac;
+		height /= screenFac;
+
+		root = new Pane();
+		root.setPrefSize(width, height);
+		root.setStyle("-fx-background-color: rgba(0, 0, 100, 0.2);");
+
+		// load list of MTGCards
+		List<MTGCard3> myList;
+		myList = loadMTGList();
+
+		/*
+		 * filter for cards of interest (Caution! the order of the filtering is
+		 * top-down) watch out for null-values!! this is just for testing currently we
+		 * have no pre-Check for null
+		 */
+
+//		List<MTGCard3> myMultiFilterList = myList.stream().filter(p -> p.getCardType().contains("Instant"))
+//														  .filter(p -> p.getConvertedManaCost() == 4)
+//														  .filter(p -> p.getManaCost().contains(ManaSimple.ILAND))
+//														  .filter(p -> p.getManaCost().contains(ManaSimple.SWAMP))
+//														  .collect(Collectors.toList());
+
+		// filter to get NO card
+//		List<MTGCard3> myMultiFilterList = myList.stream().filter(p -> p.getCardType().contains("Instant"))
+//				  .filter(p -> p.getConvertedManaCost() == 10)
+//				  .filter(p -> p.getManaCost().contains(ManaSimple.ILAND))
+//				  .filter(p -> p.getManaCost().contains(ManaSimple.SWAMP))
+//				  .collect(Collectors.toList());
+
+		// filter to get ONE card
+//		List<MTGCard3> myMultiFilterList = myList.stream().filter(p -> p.getCardType().contains("Instant"))
+//				  .filter(p -> p.getConvertedManaCost() == 6)
+//				  .filter(p -> p.getManaCost().contains(ManaSimple.ILAND))
+//				  .filter(p -> p.getManaCost().contains(ManaSimple.SWAMP))
+//				  .collect(Collectors.toList());
+
+//		// filter to get TWO cards
+//		List<MTGCard3> myMultiFilterList = myList.stream().filter(p -> p.getCardType().contains("Creature"))
+//				.filter(p -> p.getConvertedManaCost() >= 8).filter(p -> p.getManaCost().contains(ManaSimple.ILAND))
+//				.filter(p -> p.getManaCost().contains(ManaSimple.SWAMP))
+//				.filter(p -> p.getManaCost().contains(ManaSimple.WOOD)).collect(Collectors.toList());
+
+		// filter to get THREE cards
+//		List<MTGCard3> myMultiFilterList = myList.stream().filter(p -> p.getCardType().contains("Sorcery"))
+//				  .filter(p -> p.getConvertedManaCost() >= 8)
+//				  .filter(p -> p.getManaCost().contains(ManaSimple.SWAMP))
+//				  .filter(p -> p.getManaCost().contains(ManaSimple.WOOD))
+//				  .collect(Collectors.toList());
+		
+		// filter to get MORE THAN 3 cards
+		List<MTGCard3> myMultiFilterList = myList.stream().filter(p -> p.getCardType().contains("Sorcery"))
+				  .filter(p -> p.getConvertedManaCost() >= 8 )
+				  .filter(p -> p.getManaCost().contains(ManaSimple.SWAMP))
+				  .collect(Collectors.toList());
+
+		// List to get Card-Names to address pictures in folder
+		List<String> myCardNameList = new ArrayList<>();
+		// List to store images of cards (also placeHolder if necessary)
+		List<ImageView> imageList = new ArrayList<>();
+		// String to folder of images
+		String folderString2 = "resource/pics/";
+
+		for (MTGCard3 mtgCard3 : myMultiFilterList) {
+			myCardNameList.add(mtgCard3.getCardName()); // have to use right-handed name; left-handed for splitcards is
+														// not stored in pic-folder
+		}
+
+		int amountOfFoundCards = myMultiFilterList.size();
+		System.out.println("Amount of found cards: " + amountOfFoundCards);
+
+		for (int i = 0; i < myCardNameList.size(); i++) {
+			String imgLoadString = myCardNameList.get(i);
+			System.out.println("imgLoadString: " + imgLoadString);
+
+			// a Wildcard at the end of PathMatcher-String seems to work
+			PathMatcher matcher = FileSystems.getDefault().getPathMatcher("regex:.*" + imgLoadString + ".*");
+			List<java.nio.file.Path> find = null;
+			// address images
+			try {
+				find = findCardImage(folderString2, matcher);
+			} catch (IOException e1) {
+				e1.printStackTrace();
+			}
+
+			System.out.println("path is: " + find.get(0));
+			// add found images to imagesList
+			try {
+				InputStream is = Files.newInputStream(Paths.get(find.get(0).toString()));
+				ImageView img = new ImageView();
+				img.setImage(new Image(is));
+				// add Id's based on original card-names
+				System.out.println("ID added: " + imgLoadString);
+				img.setId(imgLoadString);
+				imageList.add(img);
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+
+		// load PlaceHolder ONLY if ListSize equals 0 or 2
+		if (myMultiFilterList.size() == 0 || myMultiFilterList.size() == 2) {
+			// load back_card as placeHolder
+			String backCardName = "Magic_card_back_small";
+			List<java.nio.file.Path> find = null;
+			PathMatcher matcher = FileSystems.getDefault().getPathMatcher("regex:.*" + backCardName + ".*");
+			String folderStringBackCard = "resource/";
+			try {
+				find = findCardImage(folderStringBackCard, matcher);
+			} catch (IOException e1) {
+				e1.printStackTrace();
+			}
+
+			InputStream isPH;
+			ImageView imgPlaceHolder = null;
+			try {
+				isPH = Files.newInputStream(Paths.get(find.get(0).toString()));
+				// PlaceHolder
+				imgPlaceHolder = new ImageView();
+				imgPlaceHolder.setImage(new Image(isPH));
+				System.out.println("ID added: " + "placeHolder"); // placeHolder ID
+				imgPlaceHolder.setId("placeHolder");
+				imageList.add(imgPlaceHolder); // add placeHolder to List
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+
+		System.out.println("current size of imageList: " + imageList.size());
+
+		//
+		List<String> imageIDs = new ArrayList<>();
+
+		System.out.println("IDs are: ");
+		for (ImageView imageView : imageList) {
+			System.out.println(imageView.getId());
+			imageIDs.add(imageView.getId());
+		}
+
+		zoomSpeed = 200; // define speed of zoom
+		durationMilliRotSpeed = 250; // define rotation speed
+		// place Loaded Images on screen
+		placeLoadedImagesOnScreen(imageList, imageIDs, amountOfFoundCards);
+
+		// orientation circles (invisible later or remove them)
+
+		// inner circle
+		Circle circInner = new Circle();
+		circInner.setCenterX(width / 2);
+		circInner.setCenterY(height / 2);
+		circInner.setRadius(200);
+		circInner.setFill(null);
+		circInner.setStroke(Color.BLACK);
+		circInner.setStrokeWidth(3);
+
+		// outer circle
+		Circle circOuter = new Circle();
+		circOuter.setCenterX(width / 2);
+		circOuter.setCenterY(height / 2);
+		circOuter.setRadius(400);
+		circOuter.setFill(null);
+		circOuter.setStroke(Color.BLACK);
+		circOuter.setStrokeWidth(3);
+
+		// creation of ForeSight-Animation
+		Path pathUpper = createPath(height, width);
+		Path pathLower = createPath(height, width);
+
+		// QuadCurve is element 1 ; not sure if this is best approach oO'
+//		System.out.println(pathUpper.getElements().get(1).getClass());
+		QuadCurveTo quadCurveUpper = (QuadCurveTo) pathUpper.getElements().get(1);
+		QuadCurveTo quadCurveLower = (QuadCurveTo) pathLower.getElements().get(1);
+
+		// this is using Factory-Method of Interpolator
+//		    Interpolator interpolator = Interpolator.TANGENT(Duration.millis(300), 50);
+
+		// we can define our own interpolator, but then we have to override the
+		// curve-method inside it
+		Interpolator interpolator = new Interpolator() {
+			@Override
+			protected double curve(double t) {
+				// some fancy timing-curve
+//					return (t == 0.0) ? 0.0 : Math.pow(2.0, 10 *(t-1)); // starting slow; ending fast 
+				return (t == 1.0) ? 1.0 : 1 - Math.pow(2.0, -10 * t); // start fast; ending slow
+			}
+		};
+
+		// here the KeyValue and KeyFrame for UpperCurve
+		KeyValue kvCurveUpper = new KeyValue(quadCurveUpper.controlYProperty(), 0, interpolator);
+		KeyFrame frame1 = new KeyFrame(Duration.millis(1000), kvCurveUpper);
+
+		// we can add multiple effects at once
+		// here the KeyValue and KeyFrame for UpperCurve
+		KeyValue kvCurveLower = new KeyValue(quadCurveLower.controlYProperty(), height, interpolator);
+		KeyFrame frame2 = new KeyFrame(Duration.millis(1000), kvCurveLower);
+
+		// another approach; timeline with interpolator
+		Timeline tl = new Timeline();
+		tl.setCycleCount(2); // just for trial
+		tl.getKeyFrames().addAll(frame1, frame2); // here add KeyFrames
+		tl.play(); // !!
+
+		root.getChildren().add(pathUpper);
+		root.getChildren().add(pathLower);
+//		root.getChildren().add(hBox);
+		root.getChildren().add(circInner);
+		root.getChildren().add(circOuter);
+
+		return root;
+	}
+
+	// Method to place found cards on Screen
+	private void placeLoadedImagesOnScreen(List<ImageView> imageListAll, List<String> idList, int amountOfCards) {
+
+//		List<ImageView> currPosCards;
+		imageListIn = imageListAll;
+		
+		ImageView imgViewMiddle; 
+		double imgHeight;
+		double imgWidth;
+
+		
+		/* FOR CARD ROTATION
+		 * use something like: 
+		 * List<ImageView> currPosCardsSubList =  currPosCards.subList(1, 4); // Caution! sublist start at 0 but end-1!!
+		   currPosCardsSubList.stream().forEach(System.out::println);
+		 * 
+		 * need adaptive method.
+		 *   	e.g. we use rotation also for case 3 (boolean smallerThan4 should be fine)
+		 *   
+		 * 		but also have to take into account that NEW card has no PT applied e.g. newCard.setEffect(myPT)
+		 * 
+		 * 		also have to be able to go back so do not change originList but always use subList with 3 ImageViews
+		 * 
+		 * 		still not sure how to handle superCardLoad e.g. matching 1000 cards; 
+		 * 	    this might be computational too demanding for small machines --> another subList from startup?!
+		 * 
+		 */
+		
+		
+		// we have min. case 1 because we have at least ONE placeHolder in List!!
+		switch (amountOfCards) {
+		case 0: // NO card found; NO Zoom for placeHolder!!
+			System.out.println("no card found");
+
+			// get ImageView from List identify via ID (we do not need the stream here; just
+			// for training purpose)
+			imgViewMiddle = imageListIn.stream().filter(p -> p.getId() == "placeHolder").collect(Collectors.toList())
+					.get(0);
+			// place found card to middle
+			imgHeight = imgViewMiddle.getBoundsInLocal().getHeight();
+			imgWidth = imgViewMiddle.getBoundsInLocal().getWidth();
+
+			imgViewMiddle.setX(width / 2 - imgWidth / 2);
+			imgViewMiddle.setY(height / 2 - imgHeight / 2);
+
+			root.getChildren().add(imgViewMiddle);
+
+			break;
+		case 1: // ONE card found; apply Zoom-Method!!
+			System.out.println("ONE card found");
+
+			imgViewMiddle = imageListIn.get(0);
+
+			// place found card to middle
+			imgHeight = imgViewMiddle.getBoundsInLocal().getHeight();
+			imgWidth = imgViewMiddle.getBoundsInLocal().getWidth();
+
+			imgViewMiddle.setX(width / 2 - imgWidth / 2);
+			imgViewMiddle.setY(height / 2 - imgHeight / 2);
+			
+			// here we no PT set yet so we have to create one first to apply zoom
+			imgViewMiddle.setEffect(createPTMiddle(imgViewMiddle));
+
+			// Zoom
+			isZoomed.set(false);
+
+			imgViewMiddle.setOnMouseClicked((e) -> {
+				if (!isZoomed.get()) {
+					isZoomed.set(true);
+					System.out.println("zoom in");
+					zoomIn(imgViewMiddle);
+					imgViewMiddle.toFront();
+				} else {
+					isZoomed.set(false);
+					System.out.println("zoom out");
+					imgViewMiddle.toBack();
+					zoomOut(imgViewMiddle);
+					imgViewMiddle.toBack();
+				}
+			});
+
+			root.getChildren().add(imgViewMiddle);
+
+			break;
+		case 2: // TWO cards found
+
+			/*
+			 * load two images and placeHolder; use ID to define startUp-Position of
+			 * placeHolder placeHolder is always last card in List
+			 */
+			
+			/* create List with ImageViews
+			 * of course we already have this list but we want a specific card-sorting for the first presentation
+			 * --> we want placeHolder to be at first position; at loading it is always the last one 
+			 * --> the placeHolder is ONLY loaded at cases 0 and 2 cards found (maybe we can simplify also this ?!)
+			 */
+			
+			// create current CardList to show on screen (3 cards)
+			currPosCards = createCardList(imageListIn, idList, true); // at case 2 placeHolder has to be true
+			
+			// use current CardList to place cards at wanted positions on screen
+			imgViewGroup = createCardGroup(currPosCards);
+
+			// add start-up ML's (later we use the ML's within the Groups)
+			applyMLstartUp(currPosCards, imgViewGroup); // we HAVE to do this otherwise the user has to double-click the Group first (don't want that)
+			
+			//////////////// GROUP-PART ///////////////////////////////
+			imgViewGroup.setOnMouseClicked(e -> { // from here on we work from within the Group
+
+				// here we redefine the current ML's every time a rotation occurs; that was a tough one but works ^^'
+				applyMLs(currPosCards);
+
+			});
+
+			root.getChildren().add(imgViewGroup);
+
+			break;
+		case 3: // THREE cards found
+			
+			// create current CardList to show on screen (3 cards)
+			currPosCards = createCardList(imageListIn, idList, true); // at case 2 placeHolder has to be true
+						
+						// use current CardList to place cards at wanted positions on screen
+			imgViewGroup = createCardGroup(currPosCards);
+
+						// add start-up ML's (later we use the ML's within the Groups)
+			applyMLstartUp(currPosCards, imgViewGroup); // we HAVE to do this otherwise the user has to double-click the Group first (don't want that)
+						
+						//////////////// GROUP-PART ///////////////////////////////
+			imgViewGroup.setOnMouseClicked(e -> { // from here on we work from within the Group
+							// here we redefine the current ML's every time a rotation occurs; that was a tough one but works ^^'
+				applyMLs(currPosCards);
+					});
+			
+			root.getChildren().add(imgViewGroup);
+			break;
+		 default: // use default for more than 3 cards (then we have to rotate through the list oO')
+				System.out.println("more than 3 card");
+				moreThanThreeCards = true;
+				
+				// create current CardList to show on screen (3 cards)
+				currPosCards = createCardList(imageListIn, idList, false); // only at cases 0 and 2 placeHolder has to be true
+				
+				System.out.println("currPosCards size:" + currPosCards.size());
+				
+				// use current CardList to place cards at wanted positions on screen
+				imgViewGroup = createCardGroup(currPosCards);
+
+				
+				// add start-up ML's (later we use the ML's within the Groups)
+				applyMLstartUp(currPosCards, imgViewGroup); // we HAVE to do this otherwise the user has to double-click the Group first (don't want that)
+							
+				listCounter.set(2);
+				
+				
+					//////////////// WITHIN-GROUP-PART ///////////////////////////////
+				imgViewGroup.setOnMouseClicked(e -> { // from here on we work from within the Group
+					// here we redefine the current ML's every time a rotation occurs; that was a tough one but works ^^'
+					applyMLs(currPosCards);
+					
+//					System.out.println("showing current Group content: ");
+//					imgViewGroup.getChildren().stream().forEach(System.out::println);
+					
+//					getNextCard();
+					
+					
+						});
+				
+				root.getChildren().add(imgViewGroup);
+				
+			break;
+		}
+	}
+	
+	
+	// method to add new card to current Group
+	private void getNextCard() {
+		
+		// left
+		if (!directionClick.get()) {
+			listCounter.getAndIncrement();
+			System.out.println("moving left: " + listCounter);
+		}
+		
+		// right
+		if (directionClick.get()) {
+			listCounter.getAndDecrement();
+			System.out.println("moving right: " +  listCounter);
+		}
+		
+		
+//		// remove LEFT card from Group
+//		imgViewGroup.getChildren().remove(listCounter);
+//		// grab next card from list
+//		ImageView newImage = imageListIn.get(3);
+//		
+//		// apply PT to new card
+//		double imgHeight2 = newImage.getBoundsInLocal().getHeight();
+//		double imgWidth2 = newImage.getBoundsInLocal().getWidth();
+//		
+//		newImage.setTranslateX(width / 2 - imgWidth2 / 2 + imgWidth2 * 1.5);
+//		newImage.setTranslateY(height / 2 - imgHeight2 / 2);
+//
+//		PerspectiveTransform rightPT = createPTRight(imgWidth2, imgHeight2);
+//		newImage.setEffect(rightPT);
+//		
+//		// add new card to Group
+//		imgViewGroup.getChildren().add(newImage);
+//		
+//		List<Node> currPosCardsNew = imgViewGroup.getChildren().stream().collect(Collectors.toList());
+//		
+//		System.out.println("show content of group: ");
+//		currPosCardsNew.stream().forEach(System.out::println);
+		
+		
+	}
+	
+	/* have to work on this Method
+	 * currently we are just dealing with the presents of the placeholder
+	 * at default case we are just adding ImageViews from the supplied List
+	 * BUT we have to assume that MORE than 3 cards are within the List
+	 * --> if MORE than 3 cards are present then we have to take the first 3 cards
+	 * 	if-case should be enough for a start
+	 */
+	private List<ImageView> createCardList(List<ImageView> imageListIn, List<String> idList, boolean plcHolder){
+		
+		List<ImageView> currPosCards = new ArrayList<>();
+		
+		/* of course we can just load the whole list because we already have a logic to decide weather the placeholder is
+		 * loaded at all or not, but it is always put to the end of the list and we want to use it as first card
+		 * other wise you have to rewrite your card-loading logic   
+		 */
+		if (plcHolder) { // with placeholder
+			currPosCards.addAll( 
+					 imageListIn.stream().filter(p -> p.getId() == "placeHolder").collect(Collectors.toList())
+					);
+			currPosCards.addAll(
+					 imageListIn.stream().filter(p -> p.getId() != "placeHolder").collect(Collectors.toList())
+					);			
+			
+		}else { // without placeholder; take only first 3 cards from list
+//				currPosCards.addAll(imageListIn);
+			
+			for (int i = 0; i < 3; i++) { // only first 3 cards
+				currPosCards.add(imageListIn.get(i));
+			}
+			
+		}
+		
+		return currPosCards;
+	} 
+
+	// create Group with cards at specific positions
+	private Group createCardGroup(List<ImageView> currCards) {
+		
+		Group imgViewGroup = new Group();
+		
+		// take one representative to get size of ImageView(s)
+		double imgHeight = currCards.get(0).getBoundsInLocal().getHeight();
+		double imgWidth = currCards.get(0).getBoundsInLocal().getWidth();
+		
+		
+		// LEFT card position
+		// place card to middle; subtract half of card to shift to middle; subtract
+		// 1.5*cardWidth to shift to left
+		currCards.get(0).setTranslateX(width / 2 - imgWidth / 2 - imgWidth * 1.5);
+		currCards.get(0).setTranslateY(height / 2 - imgHeight / 2);
+
+		PerspectiveTransform leftPT = createPTLeft(imgWidth, imgHeight);
+		currCards.get(0).setEffect(leftPT);
+
+		// MIDDLE card position
+		currCards.get(1).setTranslateX(width / 2 - imgWidth / 2);
+		currCards.get(1).setTranslateY(height / 2 - imgHeight / 2);
+
+		PerspectiveTransform middlePT = createPTMiddle(imgWidth, imgHeight);
+		currCards.get(1).setEffect(middlePT);
+
+		// RIGHT card position
+		// place card to middle; subtract half of card to shift to middle; add
+		// 1.5*cardWidth to shift to right
+		currCards.get(2).setTranslateX(width / 2 - imgWidth / 2 + imgWidth * 1.5);
+		currCards.get(2).setTranslateY(height / 2 - imgHeight / 2);
+
+		PerspectiveTransform rightPT = createPTRight(imgWidth, imgHeight);
+		currCards.get(2).setEffect(rightPT);
+		
+		// add ImageViews with PT's to Group
+		imgViewGroup.getChildren().add(currCards.get(0));
+		imgViewGroup.getChildren().add(currCards.get(1));
+		imgViewGroup.getChildren().add(currCards.get(2));
+		
+		return imgViewGroup;
+	}
+	
+	
+
+	private void applyMLstartUp(List<ImageView> currPosCards, Group imgViewGroup) {
+		
+		currPosCards.get(0).setOnMouseClicked(eF -> {
+			if (isClkLeftAllowed.get()) {
+				System.out.println("clicked left first time");
+				 rotateCardsLeft(currPosCards);
+				 isClkLeftAllowed.set(false);
+				 directionClick.set(false);
+					if (moreThanThreeCards) {
+						getNextCard();
+					}
+			}
+							
+		});
+		
+		currPosCards.get(1).setOnMouseClicked(eF -> {
+			System.out.println("clicked middle first time");
+			if (!isZoomed.get()) {
+				System.out.println("zoomed!");
+//					imgViewMiddle.toFront(); // wird ignoriert!?! weil innerhalb der GROUP?!
+				imgViewGroup.toFront();
+				zoomIn(currPosCards.get(1));  
+				isZoomed.getAndSet(true); 
+			}
+		});
+
+		currPosCards.get(2).setOnMouseClicked(eF -> {
+			
+			if (isClkRightAllowed.get()) {
+				System.out.println("clicked right first time");
+				rotateCardsRight(currPosCards);
+				isClkRightAllowed.set(false);
+				directionClick.set(true);
+				if (moreThanThreeCards) {
+					getNextCard();
+				}
+			}
+		});
+	}
+
+
+	// Method to update ML's
+	private void applyMLs(List<ImageView> currCardsIn) {
+		
+		ImageView imgVLeft = currCardsIn.get(0);
+		ImageView imgVMiddle = currCardsIn.get(1);
+		ImageView imgVRight = currCardsIn.get(2);
+		
+		imgVLeft.setOnMouseClicked(eLeft -> {
+			System.out.println("clickedLeft");
+			System.out.println("rotating to left");
+			
+			if (!(isZoomed.get())) { // Rotate NUR erlauben wenn Mitte NICHT eingezoomt ist
+				rotateCardsLeft(currCardsIn);
+				isClkLeftAllowed.set(false);
+				directionClick.set(false);
+				if (moreThanThreeCards) {
+					getNextCard();
+				}
+			}
+		
+		});
+		
+		imgVMiddle.setOnMouseClicked(eMiddle -> {
+			System.out.println("clickedMiddle");
+			System.out.println("zoom");
+			
+			if (!isZoomed.get()) {
+				System.out.println("zoomed!");
+				imgVMiddle.toFront();
+				zoomIn(imgVMiddle);  
+				isZoomed.getAndSet(true);
+			} else if (isZoomed.get()) { 
+				zoomOut(imgVMiddle);
+				isZoomed.getAndSet(false);
+			}
+			
+		});
+		
+		imgVRight.setOnMouseClicked(eRight -> {
+			System.out.println("clickedLeft");
+			System.out.println("rotating to right");
+			
+			if (!(isZoomed.get())) { // Rotate NUR erlauben wenn Mitte NICHT eingezoomt ist
+				rotateCardsRight(currCardsIn);
+				isClkLeftAllowed.set(false);
+				directionClick.set(true);
+				if (moreThanThreeCards) {
+					getNextCard();
+				}
+			}
+		});
+		
+	}
+	
+	
+	// Method to update ML's
+	private void applyMLs2(List<ImageView> currCardsIn) {
+		
+		ImageView imgVLeft = currCardsIn.get(0);
+		ImageView imgVMiddle = currCardsIn.get(1);
+		ImageView imgVRight = currCardsIn.get(2);
+		
+		imgVLeft.setOnMouseClicked(eLeft -> {
+			System.out.println("clickedLeft");
+			System.out.println("rotating to left");
+			
+			if (!(isZoomed.get())) { // Rotate NUR erlauben wenn Mitte NICHT eingezoomt ist
+				rotateCardsLeft2(currCardsIn);
+				isClkLeftAllowed.set(false);
+			}
+		
+		});
+		
+		imgVMiddle.setOnMouseClicked(eMiddle -> {
+			System.out.println("clickedMiddle");
+			System.out.println("zoom");
+			
+			if (!isZoomed.get()) {
+				System.out.println("zoomed!");
+				imgVMiddle.toFront();
+				zoomIn(imgVMiddle);  
+				isZoomed.getAndSet(true);
+			} else if (isZoomed.get()) { 
+				zoomOut(imgVMiddle);
+				isZoomed.getAndSet(false);
+			}
+			
+		});
+		
+		imgVRight.setOnMouseClicked(eRight -> {
+			System.out.println("clickedLeft");
+			System.out.println("rotating to right");
+			
+			if (!(isZoomed.get())) { // Rotate NUR erlauben wenn Mitte NICHT eingezoomt ist
+				rotateCardsRight(currCardsIn);
+				isClkLeftAllowed.set(false);
+			}
+		});
+		
+	}
+
+	private void rotateCardsLeft(List<ImageView> currPos) {
+
+		// moving Left ONE TineLine for ALL movements
+		Timeline tlLeft = new Timeline();
+
+		// grab all PT's you want to address
+		PerspectiveTransform leftPT = (PerspectiveTransform) currPos.get(0).getEffect();
+		PerspectiveTransform middlePT = (PerspectiveTransform) currPos.get(1).getEffect();
+		PerspectiveTransform rightPT = (PerspectiveTransform) currPos.get(2).getEffect();
+
+		
+		/*
+		 * here define KeyValues and KeyFrame you want to add to the Timeline if you
+		 * want to move the Object on X-Axis dot NOT use PT but translateXProperty()!!
+		 * e.g. placeHolder.translateXProperty() you can create a KeyValue and a
+		 * KeyFrame for the Timeline like this:
+		 * 
+		 * KeyValue kv = new KeyValue(placeHolder.translateXProperty(), -50); KeyFrame
+		 * kvMove = new KeyFrame(Duration.millis(durationMilli), kv);
+		 */
+
+		/* PseudoCode */
+
+		//////// KeyValue Definitions ///////////
+
+		// KeyValues PT Left Card
+		List<KeyValue> kvLeft = Arrays.asList(
+				// these values to get left card to "normal view" of card
+				// upper left X
+				new KeyValue(leftPT.ulxProperty(), rightPT.getUlx(), Interpolator.LINEAR),
+				// upper left Y
+				new KeyValue(leftPT.ulyProperty(), rightPT.getUly(), Interpolator.LINEAR),
+				// lower left X
+				new KeyValue(leftPT.llxProperty(), rightPT.getLlx(), Interpolator.LINEAR),
+				// lower left Y
+				new KeyValue(leftPT.llyProperty(), rightPT.getLly(), Interpolator.LINEAR),
+				// these values to get left card to "right-sided view" of card
+				// upper right X
+				new KeyValue(leftPT.urxProperty(), rightPT.getUrx(), Interpolator.LINEAR),
+				// upper right Y
+				new KeyValue(leftPT.uryProperty(), rightPT.getUry(), Interpolator.LINEAR),
+				// lower right X
+				new KeyValue(leftPT.lrxProperty(), rightPT.getLrx(), Interpolator.LINEAR),
+				// lower right Y
+				new KeyValue(leftPT.lryProperty(), rightPT.getLry(), Interpolator.LINEAR));
+
+		// KeyValues PT Middle Card
+		List<KeyValue> kvMiddle = Arrays.asList(
+				// upper left X
+				new KeyValue(middlePT.ulxProperty(), leftPT.getUlx(), Interpolator.LINEAR),
+				// upper left Y
+				new KeyValue(middlePT.ulyProperty(), leftPT.getUly(), Interpolator.LINEAR),
+				// lower left X
+				new KeyValue(middlePT.llxProperty(), leftPT.getLlx(), Interpolator.LINEAR),
+				// lower left Y
+				new KeyValue(middlePT.llyProperty(), leftPT.getLly(), Interpolator.LINEAR));
+
+		// KeyValues PT Right Card
+		List<KeyValue> kvRight = Arrays.asList(
+				// upper right X
+				new KeyValue(rightPT.urxProperty(), middlePT.getUrx(), Interpolator.LINEAR),
+				// upper right Y
+				new KeyValue(rightPT.uryProperty(), middlePT.getUry(), Interpolator.LINEAR),
+				// lower right X
+				new KeyValue(rightPT.lrxProperty(), middlePT.getLrx(), Interpolator.LINEAR),
+				// lower right Y
+				new KeyValue(rightPT.lryProperty(), middlePT.getLry(), Interpolator.LINEAR));
+
+		// KeyValues translateXProperty Left Card
+		KeyValue kvTransXLeft = new KeyValue(currPos.get(0).translateXProperty(),
+				currPos.get(2).translateXProperty().get());
+
+		// KeyValues translateXProperty Middle Card
+		KeyValue kvTransXMiddle = new KeyValue(currPos.get(1).translateXProperty(),
+				currPos.get(0).translateXProperty().get());
+
+		// KeyValues translateXProperty Right Card
+		KeyValue kvTransXRight = new KeyValue(currPos.get(2).translateXProperty(),
+				currPos.get(1).translateXProperty().get());
+
+		/////// KeyFrame Definitions ///////////
+
+		// KeyFrames PT Left Card
+		List<KeyFrame> kfLeft = Arrays.asList(
+				// to get left handed card-side to "normal view"
+				new KeyFrame(Duration.millis(durationMilliRotSpeed), kvLeft.get(0)),
+				new KeyFrame(Duration.millis(durationMilliRotSpeed), kvLeft.get(1)),
+				new KeyFrame(Duration.millis(durationMilliRotSpeed), kvLeft.get(2)),
+				new KeyFrame(Duration.millis(durationMilliRotSpeed), kvLeft.get(3)),
+				// to get right handed card side to right-handed view
+				new KeyFrame(Duration.millis(durationMilliRotSpeed), kvLeft.get(4)),
+				new KeyFrame(Duration.millis(durationMilliRotSpeed), kvLeft.get(5)),
+				new KeyFrame(Duration.millis(durationMilliRotSpeed), kvLeft.get(6)),
+				new KeyFrame(Duration.millis(durationMilliRotSpeed), kvLeft.get(7)));
+
+		// KeyFrames PT Middle Card
+		List<KeyFrame> kfMiddle = Arrays.asList(
+				new KeyFrame(Duration.millis(durationMilliRotSpeed), kvMiddle.get(0)),
+				new KeyFrame(Duration.millis(durationMilliRotSpeed), kvMiddle.get(1)),
+				new KeyFrame(Duration.millis(durationMilliRotSpeed), kvMiddle.get(2)),
+				new KeyFrame(Duration.millis(durationMilliRotSpeed), kvMiddle.get(3)));
+
+		// KeyFrames PT Right Card
+		List<KeyFrame> kfRight = Arrays.asList(
+				new KeyFrame(Duration.millis(durationMilliRotSpeed), kvRight.get(0)),
+				new KeyFrame(Duration.millis(durationMilliRotSpeed), kvRight.get(1)),
+				new KeyFrame(Duration.millis(durationMilliRotSpeed), kvRight.get(2)),
+				new KeyFrame(Duration.millis(durationMilliRotSpeed), kvRight.get(3)));
+
+		// KeyFrames translateXProperty Left Card
+		// --> to current position of right card
+		KeyFrame kfTransXLeft = new KeyFrame(Duration.millis(durationMilliRotSpeed), kvTransXLeft);
+		tlLeft.getKeyFrames().add(kfTransXLeft);
+
+		// KeyFrames translateXProperty Middle Card
+		// --> to current position of left card
+		KeyFrame kfTransXMiddle = new KeyFrame(Duration.millis(durationMilliRotSpeed), kvTransXMiddle);
+		tlLeft.getKeyFrames().add(kfTransXMiddle);
+
+		// KeyFrames translateXProperty Right Card
+		// --> to current position of middle card
+		KeyFrame kfTransXRight = new KeyFrame(Duration.millis(durationMilliRotSpeed), kvTransXRight);
+		tlLeft.getKeyFrames().add(kfTransXRight);
+
+		// apply KeyFrames to Timeline
+		tlLeft.getKeyFrames().addAll(kfLeft);
+		tlLeft.getKeyFrames().addAll(kfMiddle);
+		tlLeft.getKeyFrames().addAll(kfRight);
+		
+
+		
+		// resort list ; not elegant but works ^^'
+		for (int i = 0; i < 3; i++) {
+			currPos.add(0,new ImageView());
+		}
+		
+		// replace by using open list-positions
+		currPos.set(0, currPos.get(4));
+		currPos.set(1, currPos.get(5));
+		currPos.set(2, currPos.get(3));
+		
+		// remove obsolete list-entries
+		for (int i = 0; i < 3; i++) {
+			currPos.remove(3);
+		}
+		
+		// only for checkback
+		for (ImageView imgV : currPos) {
+			System.out.println(imgV);
+		}
+		
+		// to move cards to background if turning
+		for (int i = 0; i < 3; i++) {
+			currPos.get(i).setViewOrder(i);
+		}
+		
+		// for chkBack
+//		for (ImageView imgV : currPos) {
+//			System.out.println("current viewOrder: " + imgV.getViewOrder());
+//		}
+		
+		
+//		 play Timeline
+		tlLeft.play(); // !!
+	}
+
+	private void rotateCardsLeft2(List<ImageView> currPos) {
+	
+		/*	this method does not only rotate but also add a new card from the list to the current view
+		 * 
+		 */
+		
+			// moving Left ONE TineLine for ALL movements
+			Timeline tlLeft = new Timeline();
+	
+			// grab all PT's you want to address
+			PerspectiveTransform leftPT = (PerspectiveTransform) currPos.get(0).getEffect();
+			PerspectiveTransform middlePT = (PerspectiveTransform) currPos.get(1).getEffect();
+			PerspectiveTransform rightPT = (PerspectiveTransform) currPos.get(2).getEffect();
+	
+			//////// KeyValue Definitions ///////////
+	
+			// KeyValues PT Left Card
+			List<KeyValue> kvLeft = Arrays.asList(
+					// these values to get left card to "normal view" of card
+					// upper left X
+					new KeyValue(leftPT.ulxProperty(), rightPT.getUlx(), Interpolator.LINEAR),
+					// upper left Y
+					new KeyValue(leftPT.ulyProperty(), rightPT.getUly(), Interpolator.LINEAR),
+					// lower left X
+					new KeyValue(leftPT.llxProperty(), rightPT.getLlx(), Interpolator.LINEAR),
+					// lower left Y
+					new KeyValue(leftPT.llyProperty(), rightPT.getLly(), Interpolator.LINEAR),
+					// these values to get left card to "right-sided view" of card
+					// upper right X
+					new KeyValue(leftPT.urxProperty(), rightPT.getUrx(), Interpolator.LINEAR),
+					// upper right Y
+					new KeyValue(leftPT.uryProperty(), rightPT.getUry(), Interpolator.LINEAR),
+					// lower right X
+					new KeyValue(leftPT.lrxProperty(), rightPT.getLrx(), Interpolator.LINEAR),
+					// lower right Y
+					new KeyValue(leftPT.lryProperty(), rightPT.getLry(), Interpolator.LINEAR));
+	
+			// KeyValues PT Middle Card
+			List<KeyValue> kvMiddle = Arrays.asList(
+					// upper left X
+					new KeyValue(middlePT.ulxProperty(), leftPT.getUlx(), Interpolator.LINEAR),
+					// upper left Y
+					new KeyValue(middlePT.ulyProperty(), leftPT.getUly(), Interpolator.LINEAR),
+					// lower left X
+					new KeyValue(middlePT.llxProperty(), leftPT.getLlx(), Interpolator.LINEAR),
+					// lower left Y
+					new KeyValue(middlePT.llyProperty(), leftPT.getLly(), Interpolator.LINEAR));
+	
+			// KeyValues PT Right Card
+			List<KeyValue> kvRight = Arrays.asList(
+					// upper right X
+					new KeyValue(rightPT.urxProperty(), middlePT.getUrx(), Interpolator.LINEAR),
+					// upper right Y
+					new KeyValue(rightPT.uryProperty(), middlePT.getUry(), Interpolator.LINEAR),
+					// lower right X
+					new KeyValue(rightPT.lrxProperty(), middlePT.getLrx(), Interpolator.LINEAR),
+					// lower right Y
+					new KeyValue(rightPT.lryProperty(), middlePT.getLry(), Interpolator.LINEAR));
+	
+			// KeyValues translateXProperty Left Card
+			KeyValue kvTransXLeft = new KeyValue(currPos.get(0).translateXProperty(),
+					currPos.get(2).translateXProperty().get());
+	
+			// KeyValues translateXProperty Middle Card
+			KeyValue kvTransXMiddle = new KeyValue(currPos.get(1).translateXProperty(),
+					currPos.get(0).translateXProperty().get());
+	
+			// KeyValues translateXProperty Right Card
+			KeyValue kvTransXRight = new KeyValue(currPos.get(2).translateXProperty(),
+					currPos.get(1).translateXProperty().get());
+	
+			/////// KeyFrame Definitions ///////////
+	
+			// KeyFrames PT Left Card
+			List<KeyFrame> kfLeft = Arrays.asList(
+					// to get left handed card-side to "normal view"
+					new KeyFrame(Duration.millis(durationMilliRotSpeed), kvLeft.get(0)),
+					new KeyFrame(Duration.millis(durationMilliRotSpeed), kvLeft.get(1)),
+					new KeyFrame(Duration.millis(durationMilliRotSpeed), kvLeft.get(2)),
+					new KeyFrame(Duration.millis(durationMilliRotSpeed), kvLeft.get(3)),
+					// to get right handed card side to right-handed view
+					new KeyFrame(Duration.millis(durationMilliRotSpeed), kvLeft.get(4)),
+					new KeyFrame(Duration.millis(durationMilliRotSpeed), kvLeft.get(5)),
+					new KeyFrame(Duration.millis(durationMilliRotSpeed), kvLeft.get(6)),
+					new KeyFrame(Duration.millis(durationMilliRotSpeed), kvLeft.get(7)));
+	
+			// KeyFrames PT Middle Card
+			List<KeyFrame> kfMiddle = Arrays.asList(
+					new KeyFrame(Duration.millis(durationMilliRotSpeed), kvMiddle.get(0)),
+					new KeyFrame(Duration.millis(durationMilliRotSpeed), kvMiddle.get(1)),
+					new KeyFrame(Duration.millis(durationMilliRotSpeed), kvMiddle.get(2)),
+					new KeyFrame(Duration.millis(durationMilliRotSpeed), kvMiddle.get(3)));
+	
+			// KeyFrames PT Right Card
+			List<KeyFrame> kfRight = Arrays.asList(
+					new KeyFrame(Duration.millis(durationMilliRotSpeed), kvRight.get(0)),
+					new KeyFrame(Duration.millis(durationMilliRotSpeed), kvRight.get(1)),
+					new KeyFrame(Duration.millis(durationMilliRotSpeed), kvRight.get(2)),
+					new KeyFrame(Duration.millis(durationMilliRotSpeed), kvRight.get(3)));
+	
+			// KeyFrames translateXProperty Left Card
+			// --> to current position of right card
+			KeyFrame kfTransXLeft = new KeyFrame(Duration.millis(durationMilliRotSpeed), kvTransXLeft);
+			tlLeft.getKeyFrames().add(kfTransXLeft);
+	
+			// KeyFrames translateXProperty Middle Card
+			// --> to current position of left card
+			KeyFrame kfTransXMiddle = new KeyFrame(Duration.millis(durationMilliRotSpeed), kvTransXMiddle);
+			tlLeft.getKeyFrames().add(kfTransXMiddle);
+	
+			// KeyFrames translateXProperty Right Card
+			// --> to current position of middle card
+			KeyFrame kfTransXRight = new KeyFrame(Duration.millis(durationMilliRotSpeed), kvTransXRight);
+			tlLeft.getKeyFrames().add(kfTransXRight);
+	
+			// apply KeyFrames to Timeline
+			tlLeft.getKeyFrames().addAll(kfLeft);
+			tlLeft.getKeyFrames().addAll(kfMiddle);
+			tlLeft.getKeyFrames().addAll(kfRight);
+			
+	
+			
+			// resort list ; not elegant but works ^^'
+			for (int i = 0; i < 3; i++) {
+				currPos.add(0,new ImageView());
+			}
+			
+			// replace by using open list-positions
+			currPos.set(0, currPos.get(4));
+			currPos.set(1, currPos.get(5));
+			currPos.set(2, currPos.get(3));
+			
+			// remove obsolete list-entries
+			for (int i = 0; i < 3; i++) {
+				currPos.remove(3);
+			}
+			
+			// only for checkback
+			for (ImageView imgV : currPos) {
+				System.out.println(imgV);
+			}
+			
+			// to move cards to background if turning
+			for (int i = 0; i < 3; i++) {
+				currPos.get(i).setViewOrder(i);
+			}
+			
+			// for chkBack
+	//		for (ImageView imgV : currPos) {
+	//			System.out.println("current viewOrder: " + imgV.getViewOrder());
+	//		}
+			
+			
+	//		 play Timeline
+			tlLeft.play(); // !!
+		}
+
+	private void rotateCardsRight(List<ImageView> currPos) {
+
+
+		// moving Left ONE TineLine for ALL movements
+		Timeline tlLeft = new Timeline();
+
+		// grab all PT's you want to address
+		PerspectiveTransform leftPT = (PerspectiveTransform) currPos.get(0).getEffect();
+		PerspectiveTransform middlePT = (PerspectiveTransform) currPos.get(1).getEffect();
+		PerspectiveTransform rightPT = (PerspectiveTransform) currPos.get(2).getEffect();
+
+		//////// KeyValue Definitions ///////////
+
+		List<KeyValue> kvLeft = Arrays.asList(
+				// these values to get left card to "normal view" of card
+
+				// here left side of left handed-card to "normal" bzw. left-handed side of right
+				// handed card
+				// upper left X
+				new KeyValue(leftPT.ulxProperty(), middlePT.getUlx(), Interpolator.LINEAR),
+				// upper left Y
+				new KeyValue(leftPT.ulyProperty(), middlePT.getUly(), Interpolator.LINEAR),
+				// lower left X
+				new KeyValue(leftPT.llxProperty(), middlePT.getLlx(), Interpolator.LINEAR),
+				// lower left Y
+				new KeyValue(leftPT.llyProperty(), middlePT.getLly(), Interpolator.LINEAR),
+
+				// here right side of left handed-card to right-handed side of right handed card
+				// (so squeeze this side)
+				// upper right X
+				new KeyValue(leftPT.urxProperty(), middlePT.getUrx(), Interpolator.LINEAR),
+				// upper right Y
+				new KeyValue(leftPT.uryProperty(), middlePT.getUry(), Interpolator.LINEAR),
+				// lower right X
+				new KeyValue(leftPT.lrxProperty(), middlePT.getLrx(), Interpolator.LINEAR),
+				// lower right Y
+				new KeyValue(leftPT.lryProperty(), middlePT.getLry(), Interpolator.LINEAR));
+
+		// KeyValues PT Middle Card
+		List<KeyValue> kvMiddle = Arrays.asList(
+				// upper right X
+				new KeyValue(middlePT.urxProperty(), rightPT.getUrx(), Interpolator.LINEAR),
+				// upper right Y
+				new KeyValue(middlePT.uryProperty(), rightPT.getUry(), Interpolator.LINEAR),
+				// lower right X
+				new KeyValue(middlePT.lrxProperty(), rightPT.getLrx(), Interpolator.LINEAR),
+				// lower right Y
+				new KeyValue(middlePT.lryProperty(), rightPT.getLry(), Interpolator.LINEAR));
+
+		// KeyValues PT Right Card
+		List<KeyValue> kvRight = Arrays.asList(
+				// upper right X
+				new KeyValue(rightPT.urxProperty(), leftPT.getUrx(), Interpolator.LINEAR),
+				// upper right Y
+				new KeyValue(rightPT.uryProperty(), leftPT.getUry(), Interpolator.LINEAR),
+				// lower right X
+				new KeyValue(rightPT.lrxProperty(), leftPT.getLrx(), Interpolator.LINEAR),
+				// lower right Y
+				new KeyValue(rightPT.lryProperty(), leftPT.getLry(), Interpolator.LINEAR),
+				// upper left X
+				new KeyValue(rightPT.ulxProperty(), leftPT.getUlx(), Interpolator.LINEAR),
+				// upper left Y
+				new KeyValue(rightPT.ulyProperty(), leftPT.getUly(), Interpolator.LINEAR),
+				// lower left X
+				new KeyValue(rightPT.llxProperty(), leftPT.getLlx(), Interpolator.LINEAR),
+				// lower left Y
+				new KeyValue(rightPT.llyProperty(), leftPT.getLly(), Interpolator.LINEAR));
+
+		// KeyValues translateXProperty Left Card
+		KeyValue kvTransXLeft = new KeyValue(currPos.get(0).translateXProperty(),
+				currPos.get(1).translateXProperty().get());
+
+		// KeyValues translateXProperty Middle Card
+		KeyValue kvTransXMiddle = new KeyValue(currPos.get(1).translateXProperty(),
+				currPos.get(2).translateXProperty().get());
+
+		// KeyValues translateXProperty Right Card
+		KeyValue kvTransXRight = new KeyValue(currPos.get(2).translateXProperty(),
+				currPos.get(0).translateXProperty().get());
+
+		/////// KeyFrame Definitions ///////////
+
+		// KeyFrames PT left Card
+		List<KeyFrame> kfLeft = Arrays.asList(
+				// to get left handed card-side to "normal view"
+				new KeyFrame(Duration.millis(durationMilliRotSpeed), kvLeft.get(0)),
+				new KeyFrame(Duration.millis(durationMilliRotSpeed), kvLeft.get(1)),
+				new KeyFrame(Duration.millis(durationMilliRotSpeed), kvLeft.get(2)),
+				new KeyFrame(Duration.millis(durationMilliRotSpeed), kvLeft.get(3)),
+				new KeyFrame(Duration.millis(durationMilliRotSpeed), kvLeft.get(4)),
+				new KeyFrame(Duration.millis(durationMilliRotSpeed), kvLeft.get(5)),
+				new KeyFrame(Duration.millis(durationMilliRotSpeed), kvLeft.get(6)),
+				new KeyFrame(Duration.millis(durationMilliRotSpeed), kvLeft.get(7)));
+
+		// KeyFrames PT Middle Card
+		List<KeyFrame> kfMiddle = Arrays.asList(
+				new KeyFrame(Duration.millis(durationMilliRotSpeed), kvMiddle.get(0)),
+				new KeyFrame(Duration.millis(durationMilliRotSpeed), kvMiddle.get(1)),
+				new KeyFrame(Duration.millis(durationMilliRotSpeed), kvMiddle.get(2)),
+				new KeyFrame(Duration.millis(durationMilliRotSpeed), kvMiddle.get(3)));
+
+		// KeyFrames PT Right Card
+		List<KeyFrame> kfRight = Arrays.asList(
+				new KeyFrame(Duration.millis(durationMilliRotSpeed), kvRight.get(0)),
+				new KeyFrame(Duration.millis(durationMilliRotSpeed), kvRight.get(1)),
+				new KeyFrame(Duration.millis(durationMilliRotSpeed), kvRight.get(2)),
+				new KeyFrame(Duration.millis(durationMilliRotSpeed), kvRight.get(3)),
+				new KeyFrame(Duration.millis(durationMilliRotSpeed), kvRight.get(4)),
+				new KeyFrame(Duration.millis(durationMilliRotSpeed), kvRight.get(5)),
+				new KeyFrame(Duration.millis(durationMilliRotSpeed), kvRight.get(6)),
+				new KeyFrame(Duration.millis(durationMilliRotSpeed), kvRight.get(7)));
+
+		// KeyFrames translateXProperty Left Card
+		// --> to current position of right card
+		KeyFrame kfTransXLeft = new KeyFrame(Duration.millis(durationMilliRotSpeed), kvTransXLeft);
+		tlLeft.getKeyFrames().add(kfTransXLeft);
+
+		// KeyFrames translateXProperty Middle Card
+		// --> to current position of left card
+		KeyFrame kfTransXMiddle = new KeyFrame(Duration.millis(durationMilliRotSpeed), kvTransXMiddle);
+		tlLeft.getKeyFrames().add(kfTransXMiddle);
+
+		// KeyFrames translateXProperty Right Card
+		// --> to current position of middle card
+		KeyFrame kfTransXRight = new KeyFrame(Duration.millis(durationMilliRotSpeed), kvTransXRight);
+		tlLeft.getKeyFrames().add(kfTransXRight);
+
+		// apply KeyFrames to Timeline
+		tlLeft.getKeyFrames().addAll(kfLeft);
+		tlLeft.getKeyFrames().addAll(kfMiddle);
+		tlLeft.getKeyFrames().addAll(kfRight);
+
+		// resort list ; not elegant but works ^^'
+		for (int i = 0; i < 3; i++) {
+			currPos.add(0,new ImageView());
+		}
+		
+		// replace by using open list-positions
+		currPos.set(0, currPos.get(5));
+		currPos.set(1, currPos.get(3));
+		currPos.set(2, currPos.get(4));
+		
+		// remove obsolete list-entries
+		for (int i = 0; i < 3; i++) {
+			currPos.remove(3);
+		}
+		
+		// only for checkback
+		for (ImageView imgV : currPos) {
+			System.out.println(imgV);
+		}
+		
+		// to move cards to background if turning
+		int j = 2;
+		for (int i = 0; i < 3; i++) {
+			currPos.get(i).setViewOrder(j--);
+		}
+		
+		// for chkBack
+//		for (ImageView imgV : currPos) {
+//			System.out.println("current viewOrder: " + imgV.getViewOrder());
+//		}
+		
+		// play Timeline
+		tlLeft.play(); // !!
+
+	}
+
+	private Path createPath(double heightPath, double widthPath) {
+
+		// Method to create Standard Path for our SubMenu
+		Path path = new Path(); // the PATH is what we draw; the other Stuff is just to manipulate it
+		path.setStrokeWidth(5);
+		path.setFill(null);
+		path.setStroke(Color.BLACK);
+
+		// Instantiating the class QuadCurve
+		QuadCurveTo quadCurveTo = new QuadCurveTo();
+		// Setting properties of the class QuadCurve; this is where the curve STARTS
+		quadCurveTo.setX(0.0f); // x-coordinate
+		quadCurveTo.setY(heightPath / 2); // y-coordinate
+		// this is where the curve has its turning point
+		quadCurveTo.setControlX(widthPath / 2);
+		quadCurveTo.setControlY(heightPath / 2); // to flip this Path on Y-axis just change this value to yMax (height)
+
+		// Moving to the starting point; this is where the curve ENDS
+		MoveTo moveTo = new MoveTo();
+		moveTo.setX(widthPath);
+		moveTo.setY(heightPath / 2);
+
+		// Adding the path elements to Observable list of the Path class
+		path.getElements().add(moveTo);
+		path.getElements().add(quadCurveTo);
+
+		return path;
+	}
+
+	public void start(Stage mtgSubMenu) throws Exception {
+		Scene scene = new Scene(launchMTGPerc());
+
+		scene.setFill(Color.TRANSPARENT); // !!
+		mtgSubMenu.setScene(scene);
+		mtgSubMenu.initStyle(StageStyle.UNDECORATED);
+		mtgSubMenu.initStyle(StageStyle.TRANSPARENT); // !!
+		mtgSubMenu.show();
+
+	}
+
+	public static void main(String[] args) {
+		launch(args);
+	}
+
+	// Methoden zum platzieren von Images auf root Mitte (auch damit wir die PT mit
+	// Zoom ansteuern können)
+	private PerspectiveTransform createPTMiddle(ImageView imageViewIn) {
+
+		PerspectiveTransform ptMiddle = new PerspectiveTransform();
+
+		// get position of upper left corner of ImageView
+		double imagePosX = imageViewIn.getX();
+		double imagePosY = imageViewIn.getY();
+
+		// get size of ImageView
+		double imageWidth = imageViewIn.getBoundsInLocal().getWidth();
+		double imageHeight = imageViewIn.getBoundsInLocal().getHeight();
+
+		// Upper corners
+		// Left upper corner
+		ptMiddle.setUlx(imagePosX);
+		ptMiddle.setUly(imagePosY);
+		// Right upper corner
+		ptMiddle.setUrx(imagePosX + imageWidth);
+		ptMiddle.setUry(imagePosY);
+
+		// Lower corners
+		// Left lower corner
+		ptMiddle.setLlx(imagePosX);
+		ptMiddle.setLly(imagePosY + imageHeight);
+		// Right lower corner
+		ptMiddle.setLrx(imagePosX + imageWidth);
+		ptMiddle.setLry(imagePosY + imageHeight);
+
+		return ptMiddle;
+	}
+
+	// PT für linke Seite
+	private PerspectiveTransform createPTLeft(double imageWidth, double imageHeight) {
+
+		PerspectiveTransform ptLeft = new PerspectiveTransform();
+
+		double valY = imageHeight / 5;
+		double valX = imageWidth / 4;
+
+		// Upper corners
+		// Left upper corner
+		ptLeft.setUlx(valX); // hier etwas + (val X)
+		ptLeft.setUly(valY); // hier viel + (val y)
+		// Right upper corner
+		ptLeft.setUrx(imageWidth);
+		ptLeft.setUry(0);
+
+		// Lower corners
+		// Left lower corner
+		ptLeft.setLlx(valX); // hier etwas + (val X)
+		ptLeft.setLly(imageHeight - valY); // hier viel - (val y)
+		// Right lower corner
+		ptLeft.setLrx(imageWidth);
+		ptLeft.setLry(imageHeight);
+
+		return ptLeft;
+	}
+
+	// PT für rechte Seite
+	private PerspectiveTransform createPTRight(double imageWidth, double imageHeight) {
+
+		PerspectiveTransform ptRight = new PerspectiveTransform();
+
+		double valY = imageHeight / 5;
+		double valX = imageWidth / 4;
+
+		// Upper corners
+		// Left upper corner
+		ptRight.setUlx(0);
+		ptRight.setUly(0);
+		// Right upper corner
+		ptRight.setUrx(imageWidth - valX);
+		ptRight.setUry(valY);
+
+		// Lower corners
+		// Left lower corner
+		ptRight.setLlx(0);
+		ptRight.setLly(imageHeight);
+		// Right lower corner
+		ptRight.setLrx(imageWidth - valX);
+		ptRight.setLry(imageHeight - valY);
+
+		return ptRight;
+	}
+
+	// PT für Mitte
+	private PerspectiveTransform createPTMiddle(double imageWidth, double imageHeight) {
+
+		PerspectiveTransform ptMiddle = new PerspectiveTransform();
+
+		// Upper corners
+		// Left upper corner
+		ptMiddle.setUlx(0);
+		ptMiddle.setUly(0);
+		// Right upper corner
+		ptMiddle.setUrx(imageWidth);
+		ptMiddle.setUry(0);
+
+		// Lower corners
+		// Left lower corner
+		ptMiddle.setLlx(0);
+		ptMiddle.setLly(imageHeight);
+		// Right lower corner
+		ptMiddle.setLrx(imageWidth);
+		ptMiddle.setLry(imageHeight);
+
+		return ptMiddle;
+	}
+
+	private void zoomIn(ImageView imgView) {
+
+		Timeline tlZoom = new Timeline();
+		
+        PerspectiveTransform zoomIn =  (PerspectiveTransform)imgView.getEffect();
+		
+		// cardWidth and cardHeight from PT
+		double cardWidth = zoomIn.getUrx() - zoomIn.getUlx(); // 223.0
+		double cardHeight = zoomIn.getLry() - zoomIn.getUry(); // 310.0
+
+//		double zoomFac = 1.5; // bigger zoom
+		double zoomFac = 2; // double size of card
+//		double zoomFac = 3; // smaller zoom
+
+		// KeyValues PT ZoomIn
+		List<KeyValue> kvZoomIn = Arrays.asList(
+				// upper left X
+				new KeyValue(zoomIn.ulxProperty(), // orig value
+						zoomIn.getUlx() - cardWidth / zoomFac, // new value
+						Interpolator.LINEAR),
+				// upper left Y
+				new KeyValue(zoomIn.ulyProperty(), zoomIn.getUly() - cardHeight / zoomFac, Interpolator.LINEAR),
+				// lower left X
+				new KeyValue(zoomIn.llxProperty(), zoomIn.getLlx() - cardWidth / zoomFac, Interpolator.LINEAR),
+				// lower left Y
+				new KeyValue(zoomIn.llyProperty(), zoomIn.getLly() + cardHeight / zoomFac, Interpolator.LINEAR),
+				// upper right X
+				new KeyValue(zoomIn.urxProperty(), zoomIn.getUrx() + cardWidth / zoomFac, Interpolator.LINEAR),
+				// upper right Y
+				new KeyValue(zoomIn.uryProperty(), zoomIn.getUry() - cardHeight / zoomFac, Interpolator.LINEAR),
+				// lower right X
+				new KeyValue(zoomIn.lrxProperty(), zoomIn.getLrx() + cardWidth / zoomFac, Interpolator.LINEAR),
+				// lower right Y
+				new KeyValue(zoomIn.lryProperty(), zoomIn.getLry() + cardHeight / zoomFac, Interpolator.LINEAR));
+
+		// KeyFrames PT Right Card
+		List<KeyFrame> kfZoom = Arrays.asList(new KeyFrame(Duration.millis(zoomSpeed), kvZoomIn.get(0)),
+				new KeyFrame(Duration.millis(zoomSpeed), kvZoomIn.get(1)),
+				new KeyFrame(Duration.millis(zoomSpeed), kvZoomIn.get(2)),
+				new KeyFrame(Duration.millis(zoomSpeed), kvZoomIn.get(3)),
+				new KeyFrame(Duration.millis(zoomSpeed), kvZoomIn.get(4)),
+				new KeyFrame(Duration.millis(zoomSpeed), kvZoomIn.get(5)),
+				new KeyFrame(Duration.millis(zoomSpeed), kvZoomIn.get(6)),
+				new KeyFrame(Duration.millis(zoomSpeed), kvZoomIn.get(7)));
+
+		tlZoom.getKeyFrames().addAll(kfZoom);
+		tlZoom.play(); // !!!
+
+	}
+
+	private void zoomOut(ImageView imgView) {
+
+		Timeline tlZoom = new Timeline();
+		
+		PerspectiveTransform zoomOut =  (PerspectiveTransform)imgView.getEffect();
+
+		// cardWidth and cardHeight from PT
+		double cardWidth = zoomOut.getUrx() - zoomOut.getUlx(); // 223.0
+		double cardHeight = zoomOut.getLry() - zoomOut.getUry(); // 310.0
+
+//		double zoomFac = 1.5; // bigger zoom
+//		double zoomFac = 2;   // double size of card
+		double zoomFac = 4; // smaller zoom
+
+		// KeyValues PT zoomOut
+		List<KeyValue> kvzoomOut = Arrays.asList(
+				// upper left X
+				new KeyValue(zoomOut.ulxProperty(), // orig value
+						zoomOut.getUlx() + cardWidth / zoomFac, // new value
+						Interpolator.LINEAR),
+				// upper left Y
+				new KeyValue(zoomOut.ulyProperty(), zoomOut.getUly() + cardHeight / zoomFac, Interpolator.LINEAR),
+				// lower left X
+				new KeyValue(zoomOut.llxProperty(), zoomOut.getLlx() + cardWidth / zoomFac, Interpolator.LINEAR),
+				// lower left Y
+				new KeyValue(zoomOut.llyProperty(), zoomOut.getLly() - cardHeight / zoomFac, Interpolator.LINEAR),
+				// upper right X
+				new KeyValue(zoomOut.urxProperty(), zoomOut.getUrx() - cardWidth / zoomFac, Interpolator.LINEAR),
+				// upper right Y
+				new KeyValue(zoomOut.uryProperty(), zoomOut.getUry() + cardHeight / zoomFac, Interpolator.LINEAR),
+				// lower right X
+				new KeyValue(zoomOut.lrxProperty(), zoomOut.getLrx() - cardWidth / zoomFac, Interpolator.LINEAR),
+				// lower right Y
+				new KeyValue(zoomOut.lryProperty(), zoomOut.getLry() - cardHeight / zoomFac, Interpolator.LINEAR));
+
+		// KeyFrames PT Right Card
+		List<KeyFrame> kfZoom = Arrays.asList(new KeyFrame(Duration.millis(zoomSpeed), kvzoomOut.get(0)),
+				new KeyFrame(Duration.millis(zoomSpeed), kvzoomOut.get(1)),
+				new KeyFrame(Duration.millis(zoomSpeed), kvzoomOut.get(2)),
+				new KeyFrame(Duration.millis(zoomSpeed), kvzoomOut.get(3)),
+				new KeyFrame(Duration.millis(zoomSpeed), kvzoomOut.get(4)),
+				new KeyFrame(Duration.millis(zoomSpeed), kvzoomOut.get(5)),
+				new KeyFrame(Duration.millis(zoomSpeed), kvzoomOut.get(6)),
+				new KeyFrame(Duration.millis(zoomSpeed), kvzoomOut.get(7)));
+
+		tlZoom.getKeyFrames().addAll(kfZoom);
+		tlZoom.play(); // !!!
+
+	}
+
+	// zum durchsuchen der picture List (basiert nur auf Karten-Namen)
+	private static List<java.nio.file.Path> findCardImage(String searchDirectory, PathMatcher matcher)
+			throws IOException {
+		try (Stream<java.nio.file.Path> files = Files.walk(Paths.get(searchDirectory))) {
+			return files.filter(matcher::matches).collect(Collectors.toList());
+		}
+	}
+
+	// Methoden zum laden der library
+	private List<MTGCard3> loadMTGList() {
+		String loadList = "resource/library/fullMTGCardListFinal.sav";
+		List<MTGCard3> myList = new ArrayList<>();
+
+		try {
+			myList = serializeListIn(loadList);
+		} catch (ClassNotFoundException | IOException e) {
+			e.printStackTrace();
+		}
+		return myList;
+	}
+
+	private static List<MTGCard3> serializeListIn(String loadFileName) throws IOException, ClassNotFoundException {
+		String fileName = loadFileName;
+		FileInputStream fin = new FileInputStream(fileName);
+		ObjectInputStream ois = new ObjectInputStream(fin);
+		List<MTGCard3> mtgCardLoad = (List<MTGCard3>) ois.readObject();
+		ois.close();
+		return mtgCardLoad;
+	}
+
+}
