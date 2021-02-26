@@ -20,6 +20,7 @@ Controls:
     Mouse
   In Game:
     i,k,j,l, Space: Up, Down, Left, Right, Select
+    q: Quit
 
 Planned: 
   - adding spell-usage for Players (only Placeholder for now)
